@@ -43,7 +43,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=[settings.frontend_origin.rstrip("/")],
         allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "X-Client-Id"],
     )
 
     @app.get("/health", response_model=HealthResponse, tags=["meta"])

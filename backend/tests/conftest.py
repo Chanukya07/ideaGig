@@ -21,6 +21,8 @@ from app.main import app  # noqa: E402
 from app.ratelimit import limiter  # noqa: E402
 
 FIXTURES = Path(__file__).parent / "fixtures"
+CLIENT_A = {"X-Client-Id": "client-a-0000000000000001"}
+CLIENT_B = {"X-Client-Id": "client-b-0000000000000002"}
 
 
 def load_fixture(name: str) -> str:
@@ -66,7 +68,8 @@ def fake_openai(monkeypatch: pytest.MonkeyPatch):
 def client() -> Iterator[TestClient]:
     Base.metadata.drop_all(get_engine())
     limiter.reset()
-    with TestClient(app) as test_client:  # lifespan recreates the tables
+    # Requests are made as browser A unless a test passes other headers.
+    with TestClient(app, headers=CLIENT_A) as test_client:  # lifespan recreates the tables
         yield test_client
 
 
