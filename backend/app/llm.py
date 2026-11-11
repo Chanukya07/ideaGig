@@ -92,7 +92,7 @@ def _load_object(raw: str) -> dict:
     return data
 
 
-def _to_idea(item: object, idea_id: str | None = None) -> Idea:
+def _to_idea(item: object) -> Idea:
     try:
         draft = IdeaDraft.model_validate(item)
     except ValidationError as exc:
@@ -102,7 +102,7 @@ def _to_idea(item: object, idea_id: str | None = None) -> Idea:
         )
         raise LLMOutputError(f"Idea does not match the schema: {problems}") from exc
     # Ids are always assigned here; anything the model invents is ignored.
-    return Idea(id=idea_id or str(uuid.uuid4()), **draft.model_dump())
+    return Idea(id=str(uuid.uuid4()), **draft.model_dump())
 
 
 def parse_ideas(raw: str) -> list[Idea]:
@@ -121,10 +121,10 @@ def parse_ideas(raw: str) -> list[Idea]:
     return ideas
 
 
-def parse_idea(raw: str, idea_id: str) -> Idea:
-    """Parse a regenerate reply into one validated idea that keeps the given id."""
+def parse_idea(raw: str) -> Idea:
+    """Parse a regenerate reply into one validated idea with a fresh id."""
     data = _load_object(raw)
-    return _to_idea(data.get("idea", data), idea_id)
+    return _to_idea(data.get("idea", data))
 
 
 def _complete(user_prompt: str, parse: Callable[[str], T]) -> T:
@@ -161,7 +161,4 @@ def generate_ideas(req: GenerateRequest) -> list[Idea]:
 
 def regenerate_idea(idea: Idea, mode: RegenerateMode) -> Idea:
     logger.info("Regenerating idea: mode=%s", mode.value)
-    return _complete(
-        prompts.build_regenerate_prompt(idea, mode),
-        lambda raw: parse_idea(raw, idea.id),
-    )
+    return _complete(prompts.build_regenerate_prompt(idea, mode), parse_idea)

@@ -75,14 +75,14 @@ def test_parse_ignores_ids_from_the_model(valid_ideas_json: str):
     assert llm.parse_ideas(json.dumps(data))[0].id != "model-made-this-up"
 
 
-def test_parse_idea_keeps_given_id(valid_idea_json: str):
-    idea = llm.parse_idea(valid_idea_json, "keep-me")
-    assert idea.id == "keep-me"
+def test_parse_idea_assigns_a_fresh_id(valid_idea_json: str):
+    idea = llm.parse_idea(valid_idea_json)
+    uuid.UUID(idea.id)
 
 
 def test_parse_idea_accepts_unwrapped_object(valid_idea_json: str):
     unwrapped = json.dumps(json.loads(valid_idea_json)["idea"])
-    assert llm.parse_idea(unwrapped, "keep-me").id == "keep-me"
+    assert llm.parse_idea(unwrapped).title == "Commit Message Coach for Student Repos"
 
 
 def test_generate_prompt_contains_inputs_schema_and_rules():

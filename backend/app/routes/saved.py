@@ -1,5 +1,7 @@
 """CRUD for saved ideas."""
 
+from datetime import timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -12,7 +14,10 @@ router = APIRouter(prefix="/api/saved", tags=["saved"])
 
 
 def _to_schema(row: SavedIdeaRow) -> SavedIdea:
-    return SavedIdea(id=row.id, idea=Idea.model_validate(row.payload), created_at=row.created_at)
+    created_at = row.created_at
+    if created_at.tzinfo is None:  # SQLite drops the timezone; rows are stored in UTC.
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    return SavedIdea(id=row.id, idea=Idea.model_validate(row.payload), created_at=created_at)
 
 
 def _find_by_idea_id(db: Session, idea_id: str) -> SavedIdeaRow | None:

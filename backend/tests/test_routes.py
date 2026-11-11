@@ -155,14 +155,15 @@ def test_info_logs_hold_no_user_input_or_key(
 
 
 @pytest.mark.parametrize("mode", ["harder", "easier", "swap_stack"])
-def test_regenerate_returns_one_idea_with_same_id(
+def test_regenerate_returns_one_idea_with_a_new_id(
     client: TestClient, fake_openai, valid_idea_json: str, mode: str
 ):
     fake = fake_openai(valid_idea_json)
     body = {"mode": mode, "idea": saved_idea_payload("abc-123")}
     response = client.post("/api/ideas/regenerate/abc-123", json=body)
     assert response.status_code == 200
-    assert response.json()["id"] == "abc-123"
+    # A regenerated idea is a new idea, so it can be saved next to the original.
+    assert response.json()["id"] not in ("", "abc-123")
     assert len(fake.calls) == 1
 
 
