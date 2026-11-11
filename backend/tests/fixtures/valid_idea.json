@@ -1,0 +1,43 @@
+{
+  "idea": {
+    "title": "Commit Message Coach for Student Repos",
+    "pitch": "A CLI that scores your commit messages and suggests clearer rewrites before you push.",
+    "problem_solved": "Students push vague commit messages that make their history unreadable to reviewers.",
+    "target_users": "CS students preparing GitHub profiles for internship applications.",
+    "difficulty": "easy",
+    "estimated_hours": 12,
+    "stack": [
+      "Python",
+      "Typer",
+      "SQLite"
+    ],
+    "scope_in": [
+      "Score a commit message",
+      "Suggest a rewrite",
+      "Git hook installer"
+    ],
+    "scope_out": [
+      "Web dashboard",
+      "Team analytics"
+    ],
+    "milestones": [
+      {
+        "title": "Parse commits",
+        "description": "Read the last 20 commits from a local repo and print them."
+      },
+      {
+        "title": "Score messages",
+        "description": "Apply rule-based scoring and print a score per commit."
+      },
+      {
+        "title": "Suggest rewrites",
+        "description": "Call the LLM for a rewrite and show a diff."
+      },
+      {
+        "title": "Ship the hook",
+        "description": "Install as a commit-msg hook and publish to PyPI."
+      }
+    ],
+    "portfolio_tip": "Record a 20-second terminal GIF for the README and link the PyPI page on your resume."
+  }
+}

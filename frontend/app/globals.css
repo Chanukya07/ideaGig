@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Design tokens. One accent (warm orange); everything else is a warm neutral. */
+@theme inline {
+  --color-canvas: #faf6f0;
+  --color-surface: #ffffff;
+  --color-sunken: #f4eee5;
+  --color-line: #e6ddd0;
+  --color-ink: #211c16;
+  --color-ink-soft: #5e564c;
+  --color-accent: #c2470e;
+  --color-accent-strong: #9c370a;
+  --color-accent-soft: #fbe9dc;
+  --color-danger: #a8261b;
+  --color-danger-soft: #fdecea;
+
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --radius-card: 1.25rem;
+  --radius-control: 0.75rem;
+
+  --shadow-card: 0 1px 2px rgb(33 28 22 / 0.04), 0 10px 28px -14px rgb(33 28 22 / 0.16);
+  --shadow-lift: 0 2px 4px rgb(33 28 22 / 0.06), 0 14px 30px -14px rgb(33 28 22 / 0.24);
+}
+
+html {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  line-height: 1.55;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: var(--color-accent-soft);
+}

@@ -1,0 +1,34 @@
+# Local run: `GROQ_API_KEY=... docker compose up --build`
+# Frontend: http://localhost:3000   API: http://localhost:8000
+services:
+  backend:
+    build: ./backend
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:?Set GROQ_API_KEY in your shell or in a .env file next to this file}
+      LLM_MODEL: ${LLM_MODEL:-openai/gpt-oss-120b}
+      DATABASE_URL: sqlite:////data/ideagig.db
+      FRONTEND_ORIGIN: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ideagig-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # The browser calls the API, so this is the host-side URL.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  ideagig-data:
