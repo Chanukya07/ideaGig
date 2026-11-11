@@ -7,6 +7,8 @@ import type {
   SavedIdea,
 } from "./types";
 
+import { getClientId } from "./client-id";
+
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
 export class ApiError extends Error {
@@ -37,15 +39,29 @@ async function readErrorMessage(response: Response): Promise<string> {
   return FALLBACK_MESSAGES[response.status] ?? "Something went wrong. Please try again.";
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+// The backend allows 30 s per LLM call and may make two, so wait a little longer.
+export const REQUEST_TIMEOUT_MS = 75_000;
+
+async function request<T>(path: string, init: RequestInit = {}, asClient = false): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (init.body) headers["Content-Type"] = "application/json";
+  // Saved ideas are scoped to this browser by an anonymous id.
+  if (asClient) headers["X-Client-Id"] = getClientId();
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, {
-      ...init,
-      headers: init?.body ? { "Content-Type": "application/json" } : undefined,
-    });
+    response = await fetch(`${API_URL}${path}`, { ...init, headers, signal: controller.signal });
   } catch {
-    throw new ApiError(0, "Can't reach the server. Check your connection and try again.");
+    throw new ApiError(
+      0,
+      controller.signal.aborted
+        ? "That took too long. Please try again."
+        : "Can't reach the server. Check your connection and try again.",
+    );
+  } finally {
+    clearTimeout(timer);
   }
   if (!response.ok) {
     throw new ApiError(response.status, await readErrorMessage(response));
@@ -54,8 +70,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-function post<T>(path: string, body: unknown): Promise<T> {
-  return request<T>(path, { method: "POST", body: JSON.stringify(body) });
+function post<T>(path: string, body: unknown, asClient = false): Promise<T> {
+  return request<T>(path, { method: "POST", body: JSON.stringify(body) }, asClient);
 }
 
 export function generateIdeas(input: GenerateRequest): Promise<IdeaResponse> {
@@ -68,15 +84,15 @@ export function regenerateIdea(idea: Idea, mode: RegenerateMode): Promise<Idea> 
 }
 
 export function saveIdea(idea: Idea): Promise<SavedIdea> {
-  return post<SavedIdea>("/api/saved", idea);
+  return post<SavedIdea>("/api/saved", idea, true);
 }
 
 export function listSaved(): Promise<SavedIdea[]> {
-  return request<SavedIdea[]>("/api/saved");
+  return request<SavedIdea[]>("/api/saved", {}, true);
 }
 
 export function deleteSaved(id: number): Promise<void> {
-  return request<void>(`/api/saved/${id}`, { method: "DELETE" });
+  return request<void>(`/api/saved/${id}`, { method: "DELETE" }, true);
 }
 
 export function errorMessage(error: unknown): string {

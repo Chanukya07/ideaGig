@@ -17,7 +17,7 @@ export function MilestoneList({ milestones }: { milestones: Milestone[] }) {
       <button
         type="button"
         aria-expanded={open}
-        aria-controls={panelId}
+        aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((value) => !value)}
         className="flex min-h-14 w-full items-center justify-between gap-4 rounded-none px-5 text-left hover:bg-sunken/60 sm:px-7"
       >

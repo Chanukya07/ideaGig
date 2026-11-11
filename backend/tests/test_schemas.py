@@ -77,6 +77,15 @@ def test_idea_accepts_valid_payload():
         {"milestones": [{"title": "t", "description": "d"}] * 7},
         {"milestones": [{"title": "t"}] * 4},
         {"portfolio_tip": ""},
+        {"portfolio_tip": "x" * 601},
+        {"problem_solved": "x" * 601},
+        {"target_users": "x" * 601},
+        {"stack": ["x" * 61]},
+        {"scope_in": ["a", "b", "x" * 201]},
+        {"scope_out": ["a", "x" * 201]},
+        {"milestones": [{"title": "x" * 121, "description": "d"}] * 4},
+        {"milestones": [{"title": "t", "description": "x" * 401}] * 4},
+        {"id": "x" * 65},
     ],
 )
 def test_idea_rejects_out_of_bounds_fields(overrides: dict):

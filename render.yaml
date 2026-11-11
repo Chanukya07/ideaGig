@@ -1,0 +1,19 @@
+# Render Blueprint for the backend. In Render: New → Blueprint → pick this repo.
+# You are asked for the values marked `sync: false` when the Blueprint is applied.
+services:
+  - type: web
+    name: ideagig-api
+    runtime: docker
+    rootDir: backend
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN # your Vercel URL, no trailing slash
+        sync: false
+      - key: LLM_MODEL
+        value: openai/gpt-oss-120b
+      # Leave unset to use SQLite, which is erased on every deploy.
+      # Set to a Postgres URL to keep saved ideas.
+      - key: DATABASE_URL
+        sync: false

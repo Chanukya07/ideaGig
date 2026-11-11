@@ -48,7 +48,8 @@ SHARED_RULES = """- Titles are specific and descriptive. No vague titles such as
 - The project must be finishable inside the time budget; estimated_hours must fall inside it.
 - The stack uses the student's skills plus at most ONE skill they did not list.
 - Milestones are ordered, and each one ends with something that runs.
-- Respect every length and count limit in the schema."""
+- Respect every length and count limit in the schema.
+- Keep every other text field short: at most 2 sentences, under 300 characters."""
 
 MODE_INSTRUCTIONS: dict[RegenerateMode, str] = {
     RegenerateMode.harder: (

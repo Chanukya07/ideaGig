@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
@@ -23,7 +23,24 @@ SUGGESTED_SKILLS: tuple[str, ...] = (
 MAX_SKILLS = 10
 IDEAS_PER_RESPONSE = 3
 
-NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+MAX_SAVED_PER_CLIENT = 50
+
+
+def _text(max_length: int) -> Any:
+    """A trimmed, non-empty string with an upper bound. Nothing is unbounded."""
+    return Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=max_length)
+    ]
+
+
+Prose = _text(600)
+ListItem = _text(200)
+StackItem = _text(60)
+Title = _text(60)
+Pitch = _text(160)
+MilestoneTitle = _text(120)
+MilestoneText = _text(400)
+IdeaId = _text(64)
 Skill = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
 
 
@@ -81,28 +98,28 @@ class GenerateRequest(BaseModel):
 
 
 class Milestone(BaseModel):
-    title: NonEmptyStr
-    description: NonEmptyStr
+    title: MilestoneTitle
+    description: MilestoneText
 
 
 class IdeaDraft(BaseModel):
     """An idea as the LLM writes it: everything except the server-assigned id."""
 
-    title: Annotated[NonEmptyStr, Field(max_length=60)]
-    pitch: Annotated[NonEmptyStr, Field(max_length=160)]
-    problem_solved: NonEmptyStr
-    target_users: NonEmptyStr
+    title: Title
+    pitch: Pitch
+    problem_solved: Prose
+    target_users: Prose
     difficulty: Difficulty
     estimated_hours: int = Field(gt=0, le=1000)
-    stack: list[NonEmptyStr] = Field(min_length=1, max_length=12)
-    scope_in: list[NonEmptyStr] = Field(min_length=3, max_length=5)
-    scope_out: list[NonEmptyStr] = Field(min_length=2, max_length=3)
+    stack: list[StackItem] = Field(min_length=1, max_length=12)
+    scope_in: list[ListItem] = Field(min_length=3, max_length=5)
+    scope_out: list[ListItem] = Field(min_length=2, max_length=3)
     milestones: list[Milestone] = Field(min_length=4, max_length=6)
-    portfolio_tip: NonEmptyStr
+    portfolio_tip: Prose
 
 
 class Idea(IdeaDraft):
-    id: Annotated[NonEmptyStr, Field(max_length=64)]
+    id: IdeaId
 
 
 class IdeaResponse(BaseModel):

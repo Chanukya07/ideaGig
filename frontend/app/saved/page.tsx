@@ -130,8 +130,8 @@ export default function SavedPage() {
       ) : (
         <>
           <p className="mt-3 text-lg text-ink-soft">
-            {saved.length === 1 ? "1 saved idea" : `${saved.length} saved ideas`}. There are no
-            accounts, so everyone using this site shares this list.
+            {saved.length === 1 ? "1 saved idea" : `${saved.length} saved ideas`}, kept for this
+            browser only. Clearing your browser data removes the list.
           </p>
           <ul className="mt-8 space-y-6">
             <AnimatePresence initial={false}>
