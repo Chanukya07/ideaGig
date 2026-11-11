@@ -13,18 +13,27 @@ ideaGig asks four questions — your skills, your time, your interest area, and 
 - Form with skill chips (11 suggestions plus custom entries, max 10) and radio groups for time, interest, and experience.
 - Three ideas per request. Each has a title, pitch, problem, target users, difficulty, estimated hours, stack, scope in, scope out, 4–6 milestones, and a portfolio tip.
 - Per-idea actions: **Make harder**, **Make easier**, **Swap stack**, **Save**.
-- Saved ideas page with delete and undo.
+- Saved ideas page with delete and undo. Each browser has its own private list, with no sign-up.
 - LLM output is validated against a strict schema. One automatic retry on bad output.
-- Rate limiting (10 requests/min per IP), CORS locked to one origin, strict input validation.
+- Rate limiting (10 requests/min per IP on idea routes, 30/min on saved writes), CORS locked to one origin, and a length limit on every text field.
+- CI on every push and pull request (GitHub Actions).
 - Accessible: labelled controls, visible focus rings, full keyboard navigation, `prefers-reduced-motion` support.
 
 ## Screenshots
 
-> _Placeholder — add screenshots here._
->
-> | Form | Results | Saved |
-> |---|---|---|
-> | `docs/screenshots/form.png` | `docs/screenshots/results.png` | `docs/screenshots/saved.png` |
+Captured from the running app. The ideas shown are sample data, not live model output.
+
+**Form**
+
+![The form: skill chips and three radio groups](docs/screenshots/form.png)
+
+**Results**
+
+![Results: an idea card with scope, stack, and milestones](docs/screenshots/results.png)
+
+**Saved**
+
+![Saved ideas list](docs/screenshots/saved.png)
 
 ## Architecture
 
@@ -82,9 +91,11 @@ backend/
 frontend/
   app/             page.tsx (form), results/, saved/, layout.tsx, globals.css
   components/      IdeaForm, IdeaCard, MilestoneList, Skeleton, Button, SiteNav, motion
-  lib/             api.ts, types.ts, session.ts
+  lib/             api.ts, types.ts, session.ts, client-id.ts
   __tests__/       Vitest + React Testing Library
 docker-compose.yml
+render.yaml        Render Blueprint (backend)
+.github/workflows/ci.yml
 ```
 
 ## API
@@ -94,13 +105,15 @@ docker-compose.yml
 | `GET` | `/health` | — | `{ "status": "ok" }` |
 | `POST` | `/api/ideas/generate` | `GenerateRequest` | `IdeaResponse` (exactly 3 ideas) |
 | `POST` | `/api/ideas/regenerate/{idea_id}` | `{ "mode": "harder" \| "easier" \| "swap_stack", "idea": Idea }` | one `Idea` |
-| `POST` | `/api/saved` | `Idea` | `SavedIdea` (201; 200 if already saved) |
+| `POST` | `/api/saved` | `Idea` | `SavedIdea` (201; 200 if already saved; 409 at 50 saved) |
 | `GET` | `/api/saved` | — | `SavedIdea[]`, newest first |
 | `DELETE` | `/api/saved/{id}` | — | 204, or 404 |
 
+The three `/api/saved` routes require an `X-Client-Id` header: 16–64 characters of `A–Z a–z 0–9 _ -`. The frontend creates one per browser. Each id has its own list.
+
 Interactive docs are at `http://localhost:8000/docs` when the backend is running.
 
-**Error codes:** `422` invalid input · `429` rate limited (ours or Groq's) · `502` the model failed twice or Groq is unreachable · `503` `GROQ_API_KEY` is not set.
+**Error codes:** `409` saved list is full · `422` invalid input or missing client id · `429` rate limited (ours or Groq's) · `502` the model failed twice or Groq is unreachable · `503` `GROQ_API_KEY` is not set.
 
 ## Environment variables
 
@@ -158,13 +171,15 @@ Frontend on `http://localhost:3000`, API on `http://localhost:8000`. Saved ideas
 ## Tests
 
 ```bash
-# Backend — 78 tests, no network. The OpenAI client is replaced by a fake.
+# Backend — no network. The OpenAI client is replaced by a fake.
 cd backend && pytest
 
 # Frontend — Vitest + React Testing Library. Framer Motion is mocked.
 cd frontend && npm test
 npm run lint && npm run typecheck
 ```
+
+The same checks run in GitHub Actions (`.github/workflows/ci.yml`).
 
 Backend tests cover schema validation, JSON parsing (valid, fenced, malformed, wrong count), every route's status codes, the retry path, both kinds of rate limit, and that info logs hold no user input or key.
 
@@ -173,6 +188,10 @@ Backend tests cover schema validation, JSON parsing (valid, fenced, malformed, w
 Deploy the backend first. The frontend needs its URL.
 
 ### Backend on Render
+
+**Quick path:** in Render choose **New → Blueprint** and pick this repository. [`render.yaml`](render.yaml) fills in the settings below and asks for the secret values. The Blueprint file has not been test-applied on Render; if it is rejected, use the manual steps.
+
+**Manual path:**
 
 1. Push this repository to GitHub.
 2. In Render: **New → Web Service**, and connect the repository.
@@ -212,7 +231,11 @@ Where the brief was open, the simplest option was chosen.
 - **A regenerated idea gets a new id.** It is a different idea, so it can be saved alongside the original.
 - **The server assigns ids.** Any id in the model's reply is ignored.
 - **Form → results goes through `sessionStorage`.** The form stores the API response and routes to `/results`. Nothing is put in the URL, and a refresh keeps the ideas. They are gone when the tab closes.
-- **Saved ideas are shared.** The brief has no accounts, so everyone using one deployment sees the same saved list. The Saved page says so.
+- **Saved ideas are private per browser, without accounts.** The frontend creates a random id, keeps it in `localStorage`, and sends it as `X-Client-Id`. The backend only lists and deletes rows with that id. This is not authentication: anyone who obtains the id can read that list, and clearing browser data or switching browser starts a new, empty one. Real accounts would be the next step if lists must follow a person.
+- **Upgrading from the first release.** Saved ideas used to be shared. On startup the backend adds the `owner_id` column if it is missing. Rows saved before the change have no owner and are no longer shown to anyone; they stay in the database.
+- **Limits.** Every text field has a maximum length (60–600 characters), a browser can save at most 50 ideas, and saved writes are limited to 30/min per IP. These stop the API being used as free storage or as an open LLM proxy.
+- **No `max_tokens` on the LLM call.** Left out on purpose: the right parameter and a safe value for the default model could not be tested without a Groq key. The 30-second timeout bounds each call instead.
+- **Rate limiting trusts `X-Forwarded-For`.** The Docker image runs uvicorn with `--forwarded-allow-ips='*'`, which is right behind Render's proxy. If you expose the container directly, remove that flag, or clients can fake their IP.
 - **Saving is idempotent.** Saving the same idea twice returns the existing record.
 - **Delete is immediate, with Undo.** Undo re-saves the idea, so it gets a new record id and date.
 - **Both idea routes are rate limited** (10/min per IP each), since regenerate also calls the LLM.
@@ -224,5 +247,5 @@ Where the brief was open, the simplest option was chosen.
 - **Provider code lives in one function**, `_chat()` in `backend/app/llm.py`. To switch to OpenRouter, change the base URL, the key, and the model name there.
 - **Logging:** info logs record only counts, enum values, and the model name. Skill text and the API key are never logged.
 - **Custom skills** are rendered as React text nodes (escaped by React). `dangerouslySetInnerHTML` is not used anywhere. In the prompt they are passed as a JSON-encoded list and marked as data.
-- **Extra files beyond the brief's tree:** `Button.tsx`, `SiteNav.tsx`, `lib/session.ts`, `ratelimit.py`, test fixtures, tool configs, and `frontend/Dockerfile` (needed by Docker Compose).
+- **Extra files beyond the brief's tree:** `Button.tsx`, `SiteNav.tsx`, `lib/session.ts`, `lib/client-id.ts`, `error.tsx`, `not-found.tsx`, `ratelimit.py`, `render.yaml`, the CI workflow, test fixtures, tool configs, and `frontend/Dockerfile` (needed by Docker Compose).
 - **UI:** Tailwind only, no component library. One accent colour (`accent`, a warm orange) defined with the other tokens in `frontend/app/globals.css`. Headings use Plus Jakarta Sans; body text uses the system font.
