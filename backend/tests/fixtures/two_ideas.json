@@ -1,0 +1,92 @@
+{
+  "ideas": [
+    {
+      "title": "Commit Message Coach for Student Repos",
+      "pitch": "A CLI that scores your commit messages and suggests clearer rewrites before you push.",
+      "problem_solved": "Students push vague commit messages that make their history unreadable to reviewers.",
+      "target_users": "CS students preparing GitHub profiles for internship applications.",
+      "difficulty": "easy",
+      "estimated_hours": 12,
+      "stack": [
+        "Python",
+        "Typer",
+        "SQLite"
+      ],
+      "scope_in": [
+        "Score a commit message",
+        "Suggest a rewrite",
+        "Git hook installer"
+      ],
+      "scope_out": [
+        "Web dashboard",
+        "Team analytics"
+      ],
+      "milestones": [
+        {
+          "title": "Parse commits",
+          "description": "Read the last 20 commits from a local repo and print them."
+        },
+        {
+          "title": "Score messages",
+          "description": "Apply rule-based scoring and print a score per commit."
+        },
+        {
+          "title": "Suggest rewrites",
+          "description": "Call the LLM for a rewrite and show a diff."
+        },
+        {
+          "title": "Ship the hook",
+          "description": "Install as a commit-msg hook and publish to PyPI."
+        }
+      ],
+      "portfolio_tip": "Record a 20-second terminal GIF for the README and link the PyPI page on your resume."
+    },
+    {
+      "title": "Lecture Notes Search with SQL Full-Text",
+      "pitch": "Search every lecture PDF you own and jump straight to the page that answers your question.",
+      "problem_solved": "Finding one definition across a semester of slide decks takes far too long.",
+      "target_users": "University students with large folders of course PDFs.",
+      "difficulty": "medium",
+      "estimated_hours": 14,
+      "stack": [
+        "Python",
+        "SQL",
+        "FastAPI"
+      ],
+      "scope_in": [
+        "PDF text extraction",
+        "Full-text index",
+        "Search API",
+        "Result snippets"
+      ],
+      "scope_out": [
+        "User accounts",
+        "OCR for scanned slides",
+        "Mobile app"
+      ],
+      "milestones": [
+        {
+          "title": "Extract text",
+          "description": "Turn a folder of PDFs into page-level text rows."
+        },
+        {
+          "title": "Index pages",
+          "description": "Load rows into an SQLite FTS5 table and query it from the shell."
+        },
+        {
+          "title": "Search API",
+          "description": "Expose a /search endpoint that returns ranked snippets."
+        },
+        {
+          "title": "Minimal UI",
+          "description": "Serve one HTML page with a search box and results."
+        },
+        {
+          "title": "Write it up",
+          "description": "Benchmark query time and document the design."
+        }
+      ],
+      "portfolio_tip": "Lead the README with a before/after timing table and explain your ranking choice."
+    }
+  ]
+}
